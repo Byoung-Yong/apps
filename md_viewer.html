@@ -4,12 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Markdown Viewer</title>
+  
+  <!-- Favicon: Blue rounded square with .md text -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%232563eb%22/><text x=%2250%22 y=%2262%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2242%22 fill=%22white%22 text-anchor=%22middle%22>.md</text></svg>" />
 
   <!-- App CSS -->
   <style>
     :root{
       --bg:#f8fafc; --card:#ffffff; --muted:#64748b; --text:#0f172a; --border:#e2e8f0;
       --blue:#2563eb; --blue2:#1d4ed8; --red:#ef4444; --shadow: 0 1px 2px rgba(15,23,42,.06);
+      /* Font for code: English only as requested */
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
@@ -26,9 +30,10 @@
     
     .brand{ display:flex; align-items:center; gap:10px; }
     .logo{
-      width:34px; height:34px; border-radius:10px; background: var(--blue);
+      height:34px; padding: 0 8px; border-radius:10px; background: var(--blue);
       display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800;
       box-shadow: 0 8px 20px rgba(37,99,235,.18);
+      font-size: 15px; /* Fit .md text */
     }
     .brand-title{ font-size:18px; font-weight:800; letter-spacing:-.2px; }
     .brand-title span{ color: var(--blue); }
@@ -220,7 +225,7 @@
   <header>
     <div class="container">
       <div class="brand">
-        <div class="logo">M</div>
+        <div class="logo">.md</div>
         <div class="brand-title">Markdown <span>Viewer</span></div>
       </div>
       <div class="toggle" id="modeToggle">
