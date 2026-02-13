@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echem AI Research Utilities</title>
+    
+    <!-- Favicon: Cyclic Voltammetry (CV) Curve -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231D1D1F'/><path d='M20 55 C 40 55, 45 20, 60 20 S 75 40, 85 45 M 85 45 C 65 55, 65 80, 50 80 S 30 55, 20 55' stroke='white' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts (English Only as requested) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=SF+Mono:wght@400&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['SF Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
+                    },
+                    colors: {
+                        ios: {
+                            bg: '#F5F5F7',
+                            card: '#FFFFFF',
+                            blue: '#007AFF',
+                            text: '#1D1D1F',
+                            gray: '#8E8E93',
+                            border: '#E5E5EA',
+                        }
+                    },
+                    boxShadow: {
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F5F5F7;
+            color: #1D1D1F;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .app-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .app-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+        }
+
+        .icon-box {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-ios-border sticky top-0 z-50 bg-opacity-80 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white">
+                    <i class="ph-bold ph-flask text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-[#1D1D1F]">
+                    Echem AI <span class="text-[#8E8E93] font-medium">Utilities</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Search -->
+            <div class="relative hidden sm:block">
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="Search tools..." 
+                    class="pl-9 pr-4 py-1.5 bg-[#F2F2F7] border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-64 transition-all">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-6xl mx-auto px-6 py-10 w-full">
+        
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-2">Research Tools</h2>
+            <p class="text-[#8E8E93]">Suite of utilities for electrochemical data analysis and writing.</p>
+        </div>
+
+        <!-- App Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="appGrid">
+
+            <!-- App 1: Reference Formatter -->
+            <a href="Ref_formatter.html" class="app-card block bg-white rounded-2xl p-6 border border-gray-100 shadow-card group">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-12 h-12 rounded-xl icon-box flex items-center justify-center text-[#1D1D1F] group-hover:bg-black group-hover:text-white transition-colors duration-300">
+                        <i class="ph-fill ph-quotes text-2xl"></i>
+                    </div>
+                    <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Utility</span>
+                </div>
+                <h3 class="text-lg font-bold mb-2 group-hover:text-blue-600 transition-colors">Reference Formatter</h3>
+                <p class="text-sm text-[#8E8E93] leading-relaxed mb-4">
+                    Automatically format citations from DOIs or BibTeX into ACS, Nature, Science, and other journal styles.
+                </p>
+                <div class="flex items-center text-xs font-medium text-[#1D1D1F] opacity-60 group-hover:opacity-100 transition-opacity">
+                    <span>Open App</span>
+                    <i class="ph-bold ph-arrow-right ml-1"></i>
+                </div>
+            </a>
+
+            <!-- App 2: Tafel Analyzer -->
+            <a href="Tafel_analyzer.html" class="app-card block bg-white rounded-2xl p-6 border border-gray-100 shadow-card group">
+                <div class="flex justify-between items-start mb-4">
+                    <!-- Updated Icon: Larger size, Thinner line, Dots on top -->
+                    <div class="w-12 h-12 rounded-xl icon-box flex items-center justify-center text-[#1D1D1F] group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Red Fit Line (Analysis) - Drawn Behind -->
+                            <path d="M4 20 L20 4" stroke="#FF3B30" stroke-width="2" stroke-linecap="round" />
+                            <!-- Blue Dots (Data) - Drawn On Top -->
+                            <circle cx="6" cy="18" r="2" fill="#007AFF" />
+                            <circle cx="10" cy="14" r="2" fill="#007AFF" />
+                            <circle cx="14" cy="10" r="2" fill="#007AFF" />
+                            <circle cx="18" cy="6" r="2" fill="#007AFF" />
+                        </svg>
+                    </div>
+                    <span class="bg-green-50 text-green-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Analysis</span>
+                </div>
+                <h3 class="text-lg font-bold mb-2 group-hover:text-blue-600 transition-colors">Tafel Analyzer</h3>
+                <p class="text-sm text-[#8E8E93] leading-relaxed mb-4">
+                    Interactive Tafel plot analysis. Calculate Tafel slopes and exchange current density (I<sub>0</sub>) from CSV data.
+                </p>
+                <div class="flex items-center text-xs font-medium text-[#1D1D1F] opacity-60 group-hover:opacity-100 transition-opacity">
+                    <span>Open App</span>
+                    <i class="ph-bold ph-arrow-right ml-1"></i>
+                </div>
+            </a>
+
+            <!-- App 3: Word Counter / Text Analyzer -->
+            <a href="word_counter.html" class="app-card block bg-white rounded-2xl p-6 border border-gray-100 shadow-card group">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-12 h-12 rounded-xl icon-box flex items-center justify-center text-[#1D1D1F] group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
+                        <i class="ph-fill ph-article text-2xl"></i>
+                    </div>
+                    <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Writing</span>
+                </div>
+                <h3 class="text-lg font-bold mb-2 group-hover:text-blue-600 transition-colors">Text Analyzer</h3>
+                <p class="text-sm text-[#8E8E93] leading-relaxed mb-4">
+                    Analyze manuscript text. Count words, identify repetitive phrases (n-grams), and check readability.
+                </p>
+                <div class="flex items-center text-xs font-medium text-[#1D1D1F] opacity-60 group-hover:opacity-100 transition-opacity">
+                    <span>Open App</span>
+                    <i class="ph-bold ph-arrow-right ml-1"></i>
+                </div>
+            </a>
+<!-- App 4: Markdown Viewer -->
+<a href="md_viewer.html" class="app-card block bg-white rounded-2xl p-6 border border-gray-100 shadow-card group">
+    <div class="flex justify-between items-start mb-4">
+        <div class="w-12 h-12 rounded-xl icon-box flex items-center justify-center text-[#1D1D1F] group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+            <div class="text-lg font-bold">.md</div>
+        </div>
+        <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Viewer</span>
+    </div>
+    <h3 class="text-lg font-bold mb-2 group-hover:text-blue-600 transition-colors">Markdown Viewer</h3>
+    <p class="text-sm text-[#8E8E93] leading-relaxed mb-4">
+        Live Markdown editor with KaTeX math rendering, syntax highlighting, and split view.
+    </p>
+    <div class="flex items-center text-xs font-medium text-[#1D1D1F] opacity-60 group-hover:opacity-100 transition-opacity">
+        <span>Open App</span>
+        <i class="ph-bold ph-arrow-right ml-1"></i>
+    </div>
+</a>
+
+
+            <!-- Placeholder for Future App -->
+            <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center h-full min-h-[200px] hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-default">
+                <div class="w-10 h-10 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mb-3">
+                    <i class="ph-bold ph-plus"></i>
+                </div>
+                <h3 class="text-sm font-semibold text-gray-500">More Coming Soon</h3>
+                <p class="text-xs text-gray-400 mt-1">New electrochemical tools<br>under development.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-ios-border mt-auto">
+        <div class="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center text-xs text-[#8E8E93]">
+            <p>&copy; 2026 Echem AI Research. All rights reserved.</p>
+            <div class="flex gap-4">
+                <span>v1.0.0</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Search Functionality
+        const searchInput = document.getElementById('searchInput');
+        const appGrid = document.getElementById('appGrid');
+        const cards = appGrid.getElementsByClassName('app-card');
+
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            
+            Array.from(cards).forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const desc = card.querySelector('p').textContent.toLowerCase();
+                
+                if (title.includes(term) || desc.includes(term)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
