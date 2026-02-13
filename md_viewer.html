@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markdown Viewer</title>
+
+  <!-- App CSS -->
+  <style>
+    :root{
+      --bg:#f8fafc; --card:#ffffff; --muted:#64748b; --text:#0f172a; --border:#e2e8f0;
+      --blue:#2563eb; --blue2:#1d4ed8; --red:#ef4444; --shadow: 0 1px 2px rgba(15,23,42,.06);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    html { scroll-behavior:smooth; }
+    body { margin:0; font-family: var(--sans); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+    
+    header{
+      height: 64px; flex-shrink: 0;
+      background: rgba(255,255,255,.85); backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--border);
+      display: flex; align-items: center;
+    }
+    .container{ width: 100%; max-width: 1400px; margin:0 auto; padding:0 16px; display:flex; align-items:center; justify-content:space-between; }
+    
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .logo{
+      width:34px; height:34px; border-radius:10px; background: var(--blue);
+      display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800;
+      box-shadow: 0 8px 20px rgba(37,99,235,.18);
+    }
+    .brand-title{ font-size:18px; font-weight:800; letter-spacing:-.2px; }
+    .brand-title span{ color: var(--blue); }
+
+    .toggle{ display:none; background:#f1f5f9; padding:4px; border-radius:12px; gap:4px; }
+    .toggle button{
+      border:0; background:transparent; padding:8px 12px; border-radius:10px;
+      font-weight:700; font-size:13px; color:#475569; cursor:pointer; transition: .1s;
+    }
+    .toggle button:hover{ background: rgba(255,255,255,0.5); }
+    .toggle button.active{
+      background:#fff; color: var(--blue); box-shadow: var(--shadow);
+    }
+
+    main{ height: calc(100vh - 98px); display:flex; overflow:hidden; }
+    
+    aside{
+      width: 260px; min-width:260px; background:#fff;
+      border-right:1px solid var(--border);
+      padding:16px; display:none; flex-direction:column; gap:12px; overflow:auto;
+    }
+    @media (min-width: 900px){ aside{ display:flex; } }
+    .aside-head{ display:flex; align-items:center; justify-content:space-between; }
+    .aside-title{ font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:.12em; }
+    .linkbtn{ border:0; background:transparent; cursor:pointer; font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:.12em; }
+    .linkbtn:hover{ color:#334155; }
+    .history{ display:flex; flex-direction:column; gap:8px; }
+    .hitem{
+      border:0; background:transparent; text-align:left; cursor:pointer;
+      display:flex; align-items:center; gap:10px;
+      padding:10px 10px; border-radius:12px;
+      color:#475569;
+    }
+    .hitem:hover{ background:#f8fafc; }
+    .hitem.active{ background: rgba(37,99,235,.10); color: var(--blue2); }
+    .hitem .name{ font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hitem .icon{ font-size:16px; }
+
+    /* Content Area */
+    section{ flex:1; position:relative; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+    
+    /* Empty State */
+    .center{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:32px; background: rgba(255,255,255,.55); overflow: auto; }
+    .drop{
+      width:100%; max-width: 720px;
+      background: rgba(255,255,255,.75);
+      border: 2px dashed var(--border);
+      border-radius: 26px;
+      padding: 44px 36px;
+      text-align:center;
+      cursor:pointer;
+      transition: .18s ease;
+    }
+    .drop:hover{ border-color: rgba(37,99,235,.55); background: rgba(248,250,252,.9); }
+    .drop.drag{ border-color: var(--blue); background: rgba(37,99,235,.06); transform: scale(1.01); }
+    .drop .pillrow{ display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+    .pill{
+      font-size:11px; font-weight:800; color:#94a3b8;
+      border:1px solid var(--border); background:#fff;
+      padding:7px 10px; border-radius:999px; letter-spacing:.04em;
+    }
+    .drop h3{ margin: 14px 0 8px; font-size: 24px; font-weight:900; }
+    .drop p { margin:0 0 18px; color: var(--muted); line-height:1.6; }
+    .bigicon{
+      width:76px; height:76px; border-radius:18px;
+      background:#f1f5f9; display:flex; align-items:center; justify-content:center;
+      margin: 0 auto 12px; font-size: 34px;
+    }
+
+    /* Viewer Layout */
+    .viewer-container {
+      display: none;
+      flex: 1; width: 100%; height: 100%;
+      overflow: hidden; flex-direction: row;
+    }
+    .pane {
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden; min-width: 0; height: 100%;
+    }
+    .pane-scroll {
+      flex: 1; overflow-y: auto;
+      padding: 26px 32px; position: relative;
+    }
+    @media (min-width: 900px){ .pane-scroll{ padding: 48px 56px; } }
+
+    /* Preview Pane */
+    .preview-pane { background: #fff; scroll-behavior: smooth; }
+
+    /* Editor Pane */
+    .editor-pane { 
+      background: #0f172a; border-right: 1px solid var(--border);
+      display: none; 
+    }
+    .editor-textarea {
+      width: 100%; height: 100%;
+      background: #0f172a; color: #e2e8f0;
+      border: none; resize: none;
+      padding: 24px;
+      font-family: var(--mono); font-size: 14px;
+      line-height: 1.6; outline: none;
+    }
+
+    /* Meta Bar */
+    .meta-bar {
+      height: 48px; flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; background: #fff; z-index: 10;
+    }
+    .file-info { display: flex; align-items: center; gap: 12px; }
+    .fname { font-weight: 700; font-size: 14px; }
+    .fmeta { color: #94a3b8; font-size: 11px; font-weight: 700; }
+    .trash{
+      border:0; background:transparent; cursor:pointer;
+      width:30px; height:30px; border-radius:999px; font-size:16px; color:#94a3b8;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .trash:hover{ background: rgba(239,68,68,.10); color: var(--red); }
+
+    /* Split Layout Overrides */
+    .split-mode .preview-pane { display: flex !important; width: 50%; }
+    .split-mode .editor-pane { display: flex !important; width: 50%; }
+    .split-mode .pane-scroll { padding: 24px 32px; }
+
+    .preview-mode .preview-pane { display: flex; }
+    .preview-mode .editor-pane { display: none; }
+    
+    .edit-mode .preview-pane { display: none; }
+    .edit-mode .editor-pane { display: flex; width: 100%; border-right: none; }
+
+    /* Markdown typography */
+    .md h1{ font-size: 36px; line-height: 1.15; font-weight: 900; margin: 0 0 20px; padding-bottom: 12px; border-bottom:1px solid var(--border); }
+    .md h2{ font-size: 24px; font-weight: 900; margin: 36px 0 16px; color:#1e293b; }
+    .md h3{ font-size: 20px; font-weight: 800; margin: 26px 0 12px; color:#334155; }
+    .md p{ font-size: 18px; line-height: 1.75; margin: 0 0 14px; color:#475569; }
+    .md a{ color: var(--blue); text-decoration: underline; }
+    .md ul, .md ol{ margin: 0 0 18px; padding-left: 22px; color:#475569; }
+    .md li{ margin: 8px 0; font-size: 18px; line-height:1.6; }
+    .md blockquote{
+      border-left:4px solid var(--blue); background: rgba(37,99,235,.08);
+      padding: 16px 18px; border-radius: 0 16px 16px 0; margin: 24px 0; color:#334155; font-style: italic;
+    }
+    .md pre{ background:#0b1220; color:#e2e8f0; padding: 14px 16px; border-radius: 16px; overflow:auto; margin: 18px 0; }
+    .md code{ font-family: var(--mono); }
+    .md :not(pre) > code{
+      background:#f1f5f9; color:#db2777; padding: 2px 7px; border-radius: 10px; font-size: .9em;
+    }
+    .md table{ width:100%; border-collapse: collapse; margin: 20px 0; }
+    .md th{
+      background:#f8fafc; color:#64748b; font-weight:900; text-transform:uppercase;
+      letter-spacing:.10em; font-size:11px; padding: 10px 14px; text-align:left; border-bottom:1px solid var(--border);
+    }
+    .md td{ padding: 12px 14px; color:#475569; font-size: 14px; border-top:1px solid var(--border); }
+    .md .katex-display{ margin: 22px 0; overflow-x:auto; overflow-y:hidden; }
+
+    /* Active Block Highlight (Fixed Visibility) */
+    .active-block {
+      /* Inset Box Shadow is bulletproof against overflow clipping */
+      box-shadow: inset 4px 0 0 0 #ef4444 !important;
+      background: rgba(239, 68, 68, 0.05);
+      border-radius: 2px;
+      transition: background 0.1s ease;
+    }
+
+    /* Overlay */
+    .overlay{
+      position:fixed; inset:0; z-index:100; display:none; background: rgba(37,99,235,.18);
+      backdrop-filter: blur(6px); border: 4px dashed var(--blue); align-items:center; justify-content:center; padding: 36px;
+    }
+    .overlay .box{
+      background:#fff; border-radius: 22px; padding: 26px 26px; box-shadow: 0 20px 60px rgba(15,23,42,.18);
+      display:flex; flex-direction:column; align-items:center; gap:12px;
+    }
+    .overlay .box .ic{ width:58px; height:58px; border-radius:999px; background: rgba(37,99,235,.12); display:flex; align-items:center; justify-content:center; font-size:28px; }
+    .overlay .box .txt{ font-size: 18px; font-weight: 900; }
+
+    footer{
+      height: 34px; border-top:1px solid var(--border); background:#fff; flex-shrink: 0;
+      display:flex; align-items:center; justify-content:space-between; padding: 0 16px;
+      font-size: 10px; color:#94a3b8; text-transform:uppercase; letter-spacing:.14em; font-weight: 900;
+    }
+    .status-badge{ color:#64748b; }
+    .warn{ background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); color:#b91c1c; padding: 10px 12px; border-radius: 14px; font-size: 13px; margin: 12px 0; line-height:1.5; }
+    .hint{ background: rgba(37,99,235,.06); border: 1px solid rgba(37,99,235,.18); color:#1e40af; padding: 10px 12px; border-radius: 14px; font-size: 13px; margin: 12px 0; line-height:1.5; }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <div class="brand">
+        <div class="logo">M</div>
+        <div class="brand-title">Markdown <span>Viewer</span></div>
+      </div>
+      <div class="toggle" id="modeToggle">
+        <button id="btnPreview" class="active" type="button" title="View formatted (Read-only)">Preview</button>
+        <button id="btnSplit" type="button" title="Edit with Live Preview">Split</button>
+        <button id="btnEdit" type="button" title="Edit source code">Edit</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <div class="aside-head">
+        <div class="aside-title">Recently Viewed</div>
+        <button class="linkbtn" id="btnClearHistory" type="button">Clear</button>
+      </div>
+      <div class="history" id="historyList"></div>
+    </aside>
+
+    <section id="contentArea">
+      <!-- Empty State -->
+      <div class="center" id="emptyState">
+        <div class="drop" id="dropZone" role="button" tabindex="0">
+          <input id="fileInput" type="file" accept=".md" style="display:none" />
+          <div class="bigicon">📝</div>
+          <h3>.md 파일을 드래그&드롭</h3>
+          <p>수식(LaTeX)과 코드를 렌더링하고 바로 편집하세요.</p>
+          <div class="pillrow">
+            <div class="pill">Live Editor</div>
+            <div class="pill">Sync Cursor</div>
+            <div class="pill">KaTeX Support</div>
+          </div>
+          <div class="hint" style="display:none" id="netHint"></div>
+        </div>
+      </div>
+
+      <!-- Viewer & Editor Container -->
+      <div class="meta-bar" id="metaBar" style="display:none">
+        <div class="file-info">
+          <div class="fname" id="fileName"></div>
+          <div class="fmeta" id="fileMeta"></div>
+        </div>
+        <button class="trash" id="btnClear" title="Close file" type="button">✕</button>
+      </div>
+
+      <div class="viewer-container preview-mode" id="viewerContainer">
+        
+        <!-- Code Editor Pane -->
+        <div class="pane editor-pane">
+          <textarea id="editor" class="editor-textarea" spellcheck="false" placeholder="Type Markdown here..."></textarea>
+        </div>
+
+        <!-- Preview Pane -->
+        <div class="pane preview-pane">
+          <div class="pane-scroll" id="previewWrap"></div>
+        </div>
+
+      </div>
+
+      <div class="overlay" id="dragOverlay">
+        <div class="box"><div class="ic">📄</div><div class="txt">Drop to Open</div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>Renderer: <span class="status-badge" id="engineBadge">LOADING</span></div>
+    <div id="status">READY</div>
+  </footer>
+
+  <script>
+    (function(){
+      // --- Utilities ---
+      function setStatus(t){ if (document.getElementById('status')) document.getElementById('status').textContent = t; }
+      function setEngineBadge(t){ if (document.getElementById('engineBadge')) document.getElementById('engineBadge').textContent = t; }
+      function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+      
+      // Debounce utility
+      function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+          const context = this;
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+      }
+
+      // --- Math Stashing ---
+      var mathStore = [];
+      var INLINE_MATH_MAX = 220;
+      function stashMath(text) {
+        mathStore = [];
+        var res = text || "";
+        res = res.replace(/₩/g, '\\');
+        res = res.replace(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\])/g, function(match) {
+          var token = '@@MATH_BLOCK_' + mathStore.length + '@@';
+          mathStore.push(match); return token;
+        });
+        var out = ""; var i = 0;
+        while (i < res.length) {
+          if (res[i] === '$' && (i === 0 || res[i-1] !== '\\')) {
+            if (i + 1 < res.length && /[0-9]/.test(res[i+1])) { out += res[i]; i++; continue; }
+            var j = i + 1; var limit = Math.min(res.length, i + 1 + INLINE_MATH_MAX); var found = false;
+            while (j < limit) {
+              if (res[j] === '\n') break; if (res[j] === '\\') { j += 2; continue; }
+              if (res[j] === '$' && res[j-1] !== '\\') {
+                var body = res.substring(i + 1, j);
+                if (!body || /^\s/.test(body) || /\s$/.test(body)) break;
+                var content = res.substring(i, j + 1);
+                var token2 = '@@MATH_INLINE_' + mathStore.length + '@@';
+                mathStore.push(content); out += token2; i = j + 1; found = true; break;
+              }
+              j++;
+            }
+            if (found) continue; out += res[i]; i++; continue;
+          }
+          if (res.substring(i, i + 2) === '\\(') {
+            var k = i + 2; var limitK = Math.min(res.length, i + 2 + INLINE_MATH_MAX); var foundK = false;
+            while (k < limitK - 1) {
+              if (res[k] === '\n') break;
+              if (res.substring(k, k + 2) === '\\)') {
+                var contentK = res.substring(i, k + 2);
+                var tokenK = '@@MATH_INLINE_' + mathStore.length + '@@';
+                mathStore.push(contentK); out += tokenK; i = k + 2; foundK = true; break;
+              }
+              k++;
+            }
+            if (foundK) continue;
+          }
+          out += res[i]; i++;
+        }
+        return out;
+      }
+      function unstashMath(html) {
+        return html.replace(/@@MATH_(BLOCK|INLINE)_(\d+)@@/g, function(match, type, index) {
+          return mathStore[parseInt(index, 10)];
+        });
+      }
+
+      // --- Fallback Renderer ---
+      function simpleMarkdownToHtml(md) {
+        md = (md || "").replace(/\r\n/g, "\n");
+        md = md.replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, function(m, lang, code){
+          var cl = lang ? ' class="language-' + escapeHtml(lang) + '"' : '';
+          return '\n<pre><code' + cl + '>' + escapeHtml(code) + '</code></pre>\n';
+        });
+        md = md.replace(/(^|\n)(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\])(\n|$)/g, function(m, a, body, b){
+          return a + '<div class="hint"><div style="font-weight:900;margin-bottom:6px">Math (fallback)</div><pre class="raw" style="white-space:pre-wrap">' + escapeHtml(body.trim()) + '</pre></div>' + b;
+        });
+        md = md.replace(/^### (.*)$/gm, "<h3>$1</h3>");
+        md = md.replace(/^## (.*)$/gm, "<h2>$1</h2>");
+        md = md.replace(/^# (.*)$/gm, "<h1>$1</h1>");
+        md = md.replace(/^> (.*)$/gm, "<blockquote>$1</blockquote>");
+        md = md.replace(/(?:^|\n)(- .*(?:\n- .*)+)/g, function(m){
+          var items = m.trim().split("\n").map(function(x){ return x.replace(/^- /, "").trim(); });
+          return "\n<ul>" + items.map(function(it){ return "<li>" + escapeHtml(it) + "</li>"; }).join("") + "</ul>\n";
+        });
+        md = md.replace(/`([^`]+)`/g, function(m, c){ return "<code>" + escapeHtml(c) + "</code>"; });
+        var blocks = md.split(/\n{2,}/).map(function(s){ return s.trim(); }).filter(Boolean);
+        var html = blocks.map(function(bl){
+          if (/^<(h1|h2|h3|ul|ol|pre|blockquote|div)\b/i.test(bl)) return bl;
+          return "<p>" + escapeHtml(bl).replace(/\n/g, " ") + "</p>";
+        }).join("\n");
+        return '<div class="md">' + html + "</div>";
+      }
+
+      // --- Elements & State ---
+      var STORAGE_KEY = 'md_viewer_history_v5';
+      var state = { activeFile: null, viewMode: 'PREVIEW', history: [], dragDepth: 0, engine: 'NONE' };
+      var els = {
+        modeToggle: document.getElementById('modeToggle'),
+        btnPreview: document.getElementById('btnPreview'),
+        btnSplit: document.getElementById('btnSplit'),
+        btnEdit: document.getElementById('btnEdit'),
+        emptyState: document.getElementById('emptyState'),
+        dropZone: document.getElementById('dropZone'),
+        fileInput: document.getElementById('fileInput'),
+        viewerContainer: document.getElementById('viewerContainer'),
+        metaBar: document.getElementById('metaBar'),
+        fileName: document.getElementById('fileName'),
+        fileMeta: document.getElementById('fileMeta'),
+        btnClear: document.getElementById('btnClear'),
+        previewWrap: document.getElementById('previewWrap'),
+        editor: document.getElementById('editor'),
+        historyList: document.getElementById('historyList'),
+        btnClearHistory: document.getElementById('btnClearHistory'),
+        dragOverlay: document.getElementById('dragOverlay'),
+        contentArea: document.getElementById('contentArea'),
+        previewPane: document.querySelector('.preview-pane')
+      };
+
+      // --- Logic: Sync Cursor ---
+      // Uses Box Shadow for reliable visibility
+      function syncCursor() {
+        // Requires marked.lexer
+        if (!window.marked || !window.marked.lexer || state.viewMode !== 'SPLIT') return;
+        
+        var cursor = els.editor.selectionStart;
+        var text = els.editor.value;
+        // MUST use same options as render
+        var tokens = window.marked.lexer(text, { gfm: true, breaks: true });
+        
+        var accum = 0;
+        var activeRenderIndex = -1;
+        var currentRenderIndex = 0;
+        
+        // Find block
+        for (var i = 0; i < tokens.length; i++) {
+          var t = tokens[i];
+          var len = t.raw.length;
+          var isRendered = t.type !== 'space';
+          
+          if (accum + len >= cursor) {
+             if (isRendered) {
+                 activeRenderIndex = currentRenderIndex;
+             } else {
+                 // In a gap? Highlight the upcoming block
+                 activeRenderIndex = currentRenderIndex; 
+             }
+             break;
+          }
+          accum += len;
+          if (isRendered) currentRenderIndex++;
+        }
+
+        var mdContainer = els.previewWrap.querySelector('.md');
+        if (!mdContainer) return;
+        var blocks = mdContainer.children;
+        
+        // Clear old
+        var prev = mdContainer.querySelector('.active-block');
+        if (prev) prev.classList.remove('active-block');
+
+        // Set new
+        if (activeRenderIndex >= 0 && activeRenderIndex < blocks.length) {
+          blocks[activeRenderIndex].classList.add('active-block');
+        }
+      }
+
+      // --- Core Rendering ---
+      function renderMarkdown(md) {
+        var stashedMd = stashMath(md || "");
+        if (!window.marked) {
+          var htmlFallback = simpleMarkdownToHtml(stashedMd);
+          htmlFallback = htmlFallback.replace(/@@MATH_(BLOCK|INLINE)_(\d+)@@/g, function(match, type, index){
+            var original = mathStore[parseInt(index, 10)] || match;
+            return '<span class="hint" style="display:inline-block;padding:2px 8px;border-radius:10px;border:1px solid rgba(37,99,235,.18);background:rgba(37,99,235,.06);font-family:var(--mono)">' + escapeHtml(original) + '</span>';
+          });
+          return htmlFallback;
+        }
+        var html = window.marked.parse(stashedMd, { gfm:true, breaks:true });
+        var finalHtml = unstashMath(html);
+        if (window.DOMPurify) finalHtml = window.DOMPurify.sanitize(finalHtml);
+        return '<div class="md">' + finalHtml + '</div>';
+      }
+
+      function applyMath() {
+        if (window.renderMathInElement) {
+          try {
+            window.renderMathInElement(els.previewWrap, {
+              delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+              ],
+              throwOnError: false
+            });
+            state.engine = 'KATEX';
+          } catch(e) { console.error(e); }
+        }
+      }
+
+      function applyHighlight() {
+        if (window.hljs) {
+          els.previewWrap.querySelectorAll('pre code').forEach(function(block) {
+            window.hljs.highlightElement(block);
+          });
+        }
+      }
+
+      var updatePreview = debounce(function() {
+        if (!state.activeFile) return;
+        state.activeFile.content = els.editor.value;
+        els.previewWrap.innerHTML = renderMarkdown(state.activeFile.content);
+        applyHighlight();
+        applyMath();
+        setStatus('UPDATED');
+        setTimeout(syncCursor, 50);
+      }, 300);
+
+      // --- File Handlers ---
+      function setActiveFile(file) {
+        state.activeFile = file;
+        upsertHistory(file);
+        
+        els.emptyState.style.display = 'none';
+        els.viewerContainer.style.display = 'flex';
+        els.metaBar.style.display = 'flex';
+        els.modeToggle.style.display = 'flex';
+        
+        els.fileName.textContent = file.name;
+        els.fileMeta.textContent = (file.size/1024).toFixed(2) + ' KB • ' + new Date(file.lastModified).toLocaleDateString();
+        
+        els.editor.value = file.content;
+        setStatus('RENDERING...');
+        els.previewWrap.innerHTML = renderMarkdown(file.content);
+        applyHighlight();
+        applyMath();
+        setStatus('READY');
+        renderHistory();
+      }
+
+      function setViewMode(mode) {
+        state.viewMode = mode;
+        els.btnPreview.className = mode === 'PREVIEW' ? 'active' : '';
+        els.btnSplit.className = mode === 'SPLIT' ? 'active' : '';
+        els.btnEdit.className = mode === 'EDIT' ? 'active' : '';
+
+        els.viewerContainer.className = 'viewer-container'; 
+        if (mode === 'PREVIEW') els.viewerContainer.classList.add('preview-mode');
+        else if (mode === 'SPLIT') els.viewerContainer.classList.add('split-mode');
+        else if (mode === 'EDIT') els.viewerContainer.classList.add('edit-mode');
+        
+        if (mode !== 'EDIT') updatePreview(); 
+      }
+
+      function loadHistory(){ try{ var h = localStorage.getItem(STORAGE_KEY); if(h) state.history = JSON.parse(h); }catch(e){} }
+      function saveHistory(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.history.slice(0,10))); }catch(e){} }
+      function upsertHistory(f){
+        state.history = [f].concat(state.history.filter(function(x){ return x.name !== f.name; })).slice(0,10);
+        saveHistory();
+      }
+      function renderHistory(){
+        els.historyList.innerHTML = '';
+        if(!state.history.length) { els.historyList.innerHTML = '<div style="font-size:12px;color:#94a3b8">No history.</div>'; return; }
+        state.history.forEach(function(f){
+          var b = document.createElement('button');
+          b.className = 'hitem' + (state.activeFile && state.activeFile.name === f.name ? ' active' : '');
+          b.innerHTML = '<span class="icon">📄</span><span class="name">' + escapeHtml(f.name) + '</span>';
+          b.onclick = function(){ setActiveFile(f); };
+          els.historyList.appendChild(b);
+        });
+      }
+
+      function initEvents() {
+        els.btnPreview.onclick = function(){ setViewMode('PREVIEW'); };
+        els.btnSplit.onclick = function(){ setViewMode('SPLIT'); };
+        els.btnEdit.onclick = function(){ setViewMode('EDIT'); };
+        
+        els.editor.addEventListener('input', function() {
+          setStatus('TYPING...');
+          updatePreview();
+        });
+        
+        els.editor.addEventListener('click', syncCursor);
+        els.editor.addEventListener('keyup', function(e) {
+          syncCursor();
+        });
+
+        els.btnClear.onclick = function(){ 
+          state.activeFile = null; 
+          els.viewerContainer.style.display='none'; 
+          els.metaBar.style.display='none'; 
+          els.modeToggle.style.display='none'; 
+          els.emptyState.style.display='flex'; 
+          renderHistory(); 
+        };
+        els.btnClearHistory.onclick = function(){ state.history=[]; saveHistory(); renderHistory(); };
+        els.dropZone.onclick = function(){ els.fileInput.click(); };
+        els.fileInput.onchange = function(e){
+          var f = e.target.files[0];
+          if(!f) return;
+          var reader = new FileReader();
+          reader.onload = function(re){ setActiveFile({ name:f.name, content:re.target.result, size:f.size, lastModified:f.lastModified }); };
+          reader.readAsText(f);
+        };
+
+        state.dragDepth = 0;
+        window.addEventListener('dragenter', function(e){ e.preventDefault(); state.dragDepth++; els.dragOverlay.style.display='flex'; });
+        window.addEventListener('dragover', function(e){ e.preventDefault(); els.dragOverlay.style.display='flex'; });
+        window.addEventListener('dragleave', function(e){ e.preventDefault(); state.dragDepth = Math.max(0, state.dragDepth - 1); if(state.dragDepth===0) els.dragOverlay.style.display='none'; });
+        els.dragOverlay.addEventListener('dragleave', function(){ this.style.display='none'; });
+        els.dragOverlay.addEventListener('drop', function(e){
+          e.preventDefault(); this.style.display='none';
+          state.dragDepth = 0;
+          var f = e.dataTransfer.files[0];
+          if(f && f.name.endsWith('.md')) {
+            var reader = new FileReader();
+            reader.onload = function(re){ setActiveFile({ name:f.name, content:re.target.result, size:f.size, lastModified:f.lastModified }); };
+            reader.readAsText(f);
+          }
+        });
+      }
+
+      var LIB_TIMEOUT_MS = 6000;
+      function loadScriptSequential(urls, globalCheck) {
+        return new Promise(function(resolve, reject) {
+          var idx = 0;
+          function next(lastErr) {
+            if (globalCheck && globalCheck()) return resolve();
+            if (idx >= urls.length) return reject(lastErr || new Error("All script URLs failed"));
+            var url = urls[idx++];
+            var s = document.createElement('script');
+            s.src = url; s.async = true; s.crossOrigin = 'anonymous';
+            var done = false;
+            var timer = setTimeout(function(){ if(done)return; done=true; try{s.remove();}catch(e){} next(new Error("Timeout")); }, LIB_TIMEOUT_MS);
+            s.onload = function(){ if(done)return; done=true; clearTimeout(timer); setTimeout(function(){ if(!globalCheck||globalCheck()) resolve(); else next(); }, 20); };
+            s.onerror = function(){ if(done)return; done=true; clearTimeout(timer); try{s.remove();}catch(e){} next(); };
+            document.head.appendChild(s);
+          }
+          next(null);
+        });
+      }
+      function loadCssSequential(urls) {
+        return new Promise(function(resolve) {
+          var idx = 0;
+          function next() {
+            if (idx >= urls.length) return resolve();
+            var url = urls[idx++];
+            var l = document.createElement('link');
+            l.rel = 'stylesheet'; l.href = url; l.crossOrigin = 'anonymous';
+            var done = false;
+            var timer = setTimeout(function(){ if(done)return; done=true; try{l.remove();}catch(e){} next(); }, LIB_TIMEOUT_MS);
+            l.onload = function(){ if(done)return; done=true; clearTimeout(timer); resolve(); };
+            l.onerror = function(){ if(done)return; done=true; clearTimeout(timer); try{l.remove();}catch(e){} next(); };
+            document.head.appendChild(l);
+          }
+          next();
+        });
+      }
+
+      setStatus('BASIC READY (loading libs...)');
+      setEngineBadge('BASIC');
+      loadHistory();
+      renderHistory();
+      initEvents();
+
+      setActiveFile({
+        name: 'Welcome.md',
+        content:
+          "# Markdown Viewer\n\n" +
+          "이제 **Split View**에서 현재 블록이 확실히 보입니다!\n\n" +
+          "## 개선 사항\n" +
+          "1. **빨간색 바(Bar)**: 레이아웃 영향 없이 안쪽에 표시 (Box-Shadow)\n" +
+          "2. **정확도**: 렌더러와 동일한 Lexer 옵션 사용\n" +
+          "3. **안정성**: 클리핑 문제 해결\n\n" +
+          "## 수식 테스트\n" +
+          "$$f(x) = \\int_{-\\infty}^\\infty \\hat f(\\xi)\\,e^{2 \\pi i \\xi x} \\,d\\xi$$\n",
+        size: 0,
+        lastModified: Date.now()
+      });
+
+      var cssPromise = loadCssSequential([
+        "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css",
+        "https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css"
+      ]);
+      var katexCssPromise = loadCssSequential([
+        "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css",
+        "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      ]);
+
+      Promise.allSettled([cssPromise, katexCssPromise]).then(function() {
+        return loadScriptSequential([
+          "https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js",
+          "https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"
+        ], function(){ return !!window.marked; });
+      }).then(function() {
+        return loadScriptSequential([
+          "https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js",
+          "https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"
+        ], function(){ return !!window.DOMPurify; });
+      }).then(function() {
+        return loadScriptSequential([
+          "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js",
+          "https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"
+        ], function(){ return !!window.hljs; });
+      }).then(function() {
+        return loadScriptSequential([
+          "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js",
+          "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+        ], function(){ return !!window.katex; });
+      }).then(function() {
+        return loadScriptSequential([
+          "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js",
+          "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+        ], function(){ return !!window.renderMathInElement; });
+      }).then(function() {
+        state.engine = 'KATEX';
+        setEngineBadge(state.engine);
+        setStatus('READY (ENHANCED)');
+        if (state.activeFile) {
+          els.previewWrap.innerHTML = renderMarkdown(state.activeFile.content);
+          applyHighlight();
+          applyMath();
+        }
+      }).catch(function() {
+        setEngineBadge('BASIC');
+        setStatus('READY (BASIC - libs blocked)');
+        var hint = document.getElementById('netHint');
+        if (hint) hint.style.display = 'block';
+      });
+
+    })();
+  </script>
+</body>
+</html>
